@@ -1,0 +1,4 @@
+{:defaultmeasurement "Temperature"
+ :defaultlocation "amuri,tampere"
+ :secrets #include "secrets.edn"
+ }

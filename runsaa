@@ -1,0 +1,4 @@
+#!/bin/sh
+
+
+/usr/bin/java -jar /Users/shem/lisp/saa/target/uberjar/saa-0.1.0-standalone.jar $@ 2>/dev/null

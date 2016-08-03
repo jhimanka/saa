@@ -20,7 +20,6 @@
   ;; An option with a required argument
   [["-l" "--location PLACE" "Location"
     :default (:defaultlocation (config))
-;;    :parse-fn #(Integer/parseInt %)
     :validate [#(string? %) "Must be a string"]]
    ;; A non-idempotent option
    ["-m" "--measurement MEASUREMENT" "Measurement"
@@ -51,6 +50,25 @@
 (def firstcontent (comp first :content))
 (def secondcontent (comp second :content))
 
+(defn olderthan
+  "Is this file older than given time?"
+  [suspect age]
+  (> (- (.getTime (java.util.Date.))
+        (.lastModified suspect))
+     age))
+
+(defn cleanup
+  "Delete datafiles older than 30 minutes"
+  []
+  (let [dir (io/file ".")
+        files (.listFiles dir)
+        datafiles (filter #(re-find #"^weatherdata-.+xml$" (.getName %)) files) ]
+    (map (fn [x]
+           (when
+               (olderthan x 1800000)
+             (.delete x)))
+         datafiles)))
+
 (defn -main
   [& args]
   (let [climap (parse-opts args cli-options)
@@ -63,9 +81,7 @@
                      (:location cliopts))
         initfile (when (or ; fetch the XML if a cached copy doesn't exist or is over 15 mins old
                         (not (.exists (io/file filename)))
-                        (> (- (.getTime (java.util.Date.))
-                              (.lastModified (io/file filename)))
-                           900000))
+                        (olderthan (io/file filename) 900000))
                    (spit filename
                          (:body
                           (client/get datauri))))
@@ -77,6 +93,7 @@
          (tag= :result) (tag= :MeasurementTimeseries)
          (attr= :gml/id measurement) (tag= :point) (tag= :MeasurementTVP)]
         points (eduction (apply comp path) [ennuste])]
+    (cleanup)
     (cond
       (:help cliopts)
       (println (str "-l, --location PLACE [" (:defaultlocation (config)) "]\n-m --measurement [" (:defaultmeasurement (config)) "]\n\nPossible values for measurement are:\n" (clojure.string/join " " (sort measurements))))

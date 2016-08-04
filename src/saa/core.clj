@@ -60,21 +60,22 @@
 (defn cleanup
   "Delete datafiles older than 30 minutes"
   []
-  (let [dir (io/file ".")
+  (let [dir (io/file "/tmp/.")
         files (.listFiles dir)
-        datafiles (filter #(re-find #"^weatherdata-.+xml$" (.getName %)) files) ]
-    (map (fn [x]
-           (when
-               (olderthan x 1800000)
-             (.delete x)))
-         datafiles)))
+        datafiles (filter #(re-find #"^weatherdata-.+xml$" (.getName %)) files)]
+    (doall
+     (map (fn [x]
+            (when
+                (olderthan x 1800000)
+              (.delete x)))
+          datafiles))))
 
 (defn -main
   [& args]
   (let [climap (parse-opts args cli-options)
         cliopts (:options climap) 
         measurement (str "mts-1-1-" (:measurement cliopts))
-        filename (str "weatherdata-" (:location cliopts) ".xml")
+        filename (str "/tmp/weatherdata-" (:location cliopts) ".xml")
         datauri (str "http://data.fmi.fi/fmi-apikey/"
                      (apikey (config))
                      "/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::timevaluepair&place="

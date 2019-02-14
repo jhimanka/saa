@@ -14,6 +14,7 @@ following:
 {:apikey "XXXXXXXXX"}
 
 mkdir classes
+
 clj -e "(compile 'saa)"
 
 ## Usage

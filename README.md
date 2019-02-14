@@ -13,8 +13,8 @@ following:
 
 {:apikey "XXXXXXXXX"}
 
-lein uberjar
-fix the path in runsaa.sh
+mkdir classes
+clj -e "(compile 'saa)"
 
 ## Usage
 

@@ -1,4 +1,4 @@
-(ns saa.core
+(ns saa
   (:require
    [fipp.edn :refer (pprint) :rename {pprint fipp}]
    [clojure.java.io :as io]

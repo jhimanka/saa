@@ -4,14 +4,10 @@ Finnish Meterological Institute forecasts
 
 ## Installation
 
-You need your own api key to access the forecasts. It is free and can
-be obtained from
-https://ilmatieteenlaitos.fi/rekisteroityminen-avoimen-datan-kayttajaksi
+An api key used to be a requirement, but now access is open to everybody. More info at
+https://en.ilmatieteenlaitos.fi/open-data-manual-accessing-data
 
-Once you have the api key, in a file called secrets.edn, place the
-following:
-
-{:apikey "XXXXXXXXX"}
+To build the classes, do this:
 
 mkdir classes
 

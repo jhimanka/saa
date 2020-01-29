@@ -76,9 +76,11 @@
         cliopts (:options climap) 
         measurement (str "mts-1-1-" (:measurement cliopts))
         filename (str "/tmp/weatherdata-" (:location cliopts) ".xml")
-        datauri (str "http://data.fmi.fi/fmi-apikey/"
-                     (apikey (config))
-                     "/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::timevaluepair&place="
+        ;; datauri (str "http://data.fmi.fi/fmi-apikey/"
+        ;;              (apikey (config))
+        ;;              "/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::timevaluepair&place="
+        ;;              (:location cliopts))
+        datauri (str "http://opendata.fmi.fi/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::timevaluepair&place="
                      (:location cliopts))
         initfile (when (or ; fetch the XML if a cached copy doesn't exist or is over 15 mins old
                         (not (.exists (io/file filename)))

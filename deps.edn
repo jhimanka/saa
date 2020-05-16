@@ -1,10 +1,10 @@
 {:deps
  {org.clojure/clojure {:mvn/version "1.10.1"}
  org.clojure/data.xml {:mvn/version "0.0.8"}
- fipp {:mvn/version "0.6.22"}
- aero {:mvn/version "1.1.5"}
- org.clojure/tools.cli {:mvn/version "0.4.2"}
- clj-http {:mvn/version "3.10.0"}
+ fipp {:mvn/version "0.6.23"}
+ aero {:mvn/version "1.1.6"}
+ org.clojure/tools.cli {:mvn/version "1.0.194"}
+ clj-http {:mvn/version "3.10.1"}
   }
 :paths ["src" "classes"] 
  }

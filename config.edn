@@ -1,4 +1,3 @@
 {:defaultmeasurement "Temperature"
  :defaultlocation "juhannuskylä,tampere"
- :secrets #include "secrets.edn"
  }

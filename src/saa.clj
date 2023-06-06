@@ -1,20 +1,23 @@
 (ns saa
   (:require
    [fipp.edn :refer (pprint) :rename {pprint fipp}]
+   [clojure.string :refer [split join trim]]
    [clojure.java.io :as io]
    [clojure.tools.cli :refer [parse-opts]]
    [aero.core :refer (read-config)]
-   [clj-http.client :as client])
+   [clj-http.client :as client]
+   [java-time :as jt])
   (:use [clojure.data.xml])
+  (:import [java.io  BufferedReader StringReader])
   (:gen-class))
 
 (defn config []
   (read-config "config.edn"))
 
 (defn apikey [conf]
-  (get-in conf [:secrets :apikey])) 
+  (get-in conf [:secrets :apikey]))
 
-(def measurements #{"GeopHeight" "Temperature" "Pressure" "Humidity" "WindDirection" "WindSpeedMS" "WindUMS" "WindVMS" "MaximumWind" "WindGust" "DewPoint" "TotalCloudCover" "WeatherSymbol3" "LowCloudCover" "MediumCloudCover" "HighCloudCover" "Precipitation1h" "PrecipitationAmount" "RadiationGlobalAccumulation" "RadiationLWAccumulation" "RadiationNetSurfaceLWAccumulation" "RadiationNetSurfaceSWAccumulation" "RadiationDiffuseAccumulation"})
+(def measurements #{"GeopHeight" "Temperature" "Pressure" "Humidity" "WindDirection" "WindSpeedMS" "WindUMS" "WindVMS"  "WindGust" "DewPoint" "TotalCloudCover" "LowCloudCover" "MediumCloudCover" "HighCloudCover" "PrecipitationAmount" "RadiationGlobalAccumulation" "RadiationNetSurfaceLWAccumulation" "RadiationNetSurfaceSWAccumulation" "RadiationGlobal" "Visibility"})
 
 (def cli-options
   ;; An option with a required argument
@@ -45,11 +48,6 @@
 (defn attr= [a v]
   (attrp a (partial = v)))
 
-(def text (comp (mapcat :content) (filter string?)))
-
-(def firstcontent (comp first :content))
-(def secondcontent (comp second :content))
-
 (defn olderthan
   "Is this file older than given time?"
   [suspect age]
@@ -66,17 +64,17 @@
     (doall
      (map (fn [x]
             (when
-                (olderthan x 1800000)
+             (olderthan x 1800000)
               (.delete x)))
           datafiles))))
 
 (defn -main
   [& args]
   (let [climap (parse-opts args cli-options)
-        cliopts (:options climap) 
-        measurement (str "mts-1-1-" (:measurement cliopts))
+        cliopts (:options climap)
+        measurement-name  (:measurement cliopts)
         filename (str "/tmp/weatherdata-" (:location cliopts) ".xml")
-        datauri (str "http://opendata.fmi.fi/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::timevaluepair&place="
+        datauri (str "https://opendata.fmi.fi/wfs?service=WFS&version=2.0.0&request=getFeature&storedquery_id=fmi::forecast::harmonie::surface::point::multipointcoverage&place="
                      (:location cliopts))
         initfile (when (or ; fetch the XML if a cached copy doesn't exist or is over 15 mins old
                         (not (.exists (io/file filename)))
@@ -85,22 +83,53 @@
                          (:body
                           (client/get datauri))))
         ennuste (->
-              (slurp filename)
-              parse-str)
-        path
-        [(tag= :member) (tag= :PointTimeSeriesObservation)
-         (tag= :result) (tag= :MeasurementTimeseries)
-         (attr= :gml/id measurement) (tag= :point) (tag= :MeasurementTVP)]
-        points (eduction (apply comp path) [ennuste])]
+                 (slurp filename)
+                 parse-str)
+        positions_path [(tag= :member) (tag= :GridSeriesObservation)
+                        (tag= :result) (tag= :MultiPointCoverage)
+                        (tag= :domainSet) (tag= :SimpleMultiPoint) (tag= :positions)]
+        times_positions (eduction (apply comp positions_path) [ennuste])
+        times_positions_rows (line-seq (BufferedReader. (StringReader. (apply str (:content (first times_positions))))))
+        results_path [(tag= :member) (tag= :GridSeriesObservation)
+                      (tag= :result) (tag= :MultiPointCoverage) (tag= :rangeSet)
+                      (tag= :DataBlock) (tag= :doubleOrNilReasonTupleList)]
+        results (eduction (apply comp results_path) [ennuste])
+        resultrows (line-seq (BufferedReader. (StringReader. (apply str (:content (first results))))))
+        fields_path [(tag= :member) (tag= :GridSeriesObservation)
+                     (tag= :result) (tag= :MultiPointCoverage) (tag= :rangeType) (tag= :DataRecord)]
+        fields (eduction (apply comp fields_path) [ennuste])
+        fieldindex (reduce (fn mapitus [acc pari] (assoc acc (key (first pari)) (val (first  pari)))) {}
+                           (map-indexed (fn mapsahdus [index item] {(get-in item [:attrs :name]) index})
+                                        (:content (first fields))))
+        slice (fn [measurement coll]
+                (map (fn [rivi]
+                       (-> (trim rivi)
+                           (split #"\s+")
+                           (nth (get fieldindex measurement)))) coll))
+        time-extract (fn [coll]
+                       (map (fn [rivi]
+                              (-> (trim rivi)
+                                  (split #"\s+")
+                                  (last)
+                                  (parse-long)
+                                  (* 1000)
+                                  (jt/java-date)
+                                  (str))) coll))]
     (cleanup)
     (cond
       (:help cliopts)
-      (println (str "-l, --location PLACE [" (:defaultlocation (config)) "]\n-m --measurement [" (:defaultmeasurement (config)) "]\n\nPossible values for measurement are:\n" (clojure.string/join " " (sort measurements))))
+      (println (str "-l, --location PLACE [" (:defaultlocation (config)) "]\n-m --measurement [" (:defaultmeasurement (config)) "]\n\nPossible values for measurement are:\n" (join " " (sort measurements))))
       (:errors climap)
       (println (:errors climap))
       :else
-      (fipp (map (juxt (comp firstcontent firstcontent)
-                       (comp firstcontent secondcontent)) points)))))
-  
+      (->> (interleave
+            (time-extract (-> times_positions_rows (rest) (butlast)))
+            (slice measurement-name (-> resultrows (rest) (butlast))))
+           (partition 2)
+           (fipp)))))
 
-
+(comment
+  (require '[portal.api :as portal])
+  (portal/open)
+  (portal/tap)
+  (def ennuste (parse-str (slurp "/tmp/weatherdata-juhannuskylä,tampere.xml"))))

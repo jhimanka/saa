@@ -2,6 +2,11 @@
 
 Finnish Meterological Institute forecasts
 
+## NB
+
+The XML format has changed; the master branch is the old format, v2
+branch is the new format.
+
 ## Installation
 
 An api key used to be a requirement, but now access is open to everybody. More info at

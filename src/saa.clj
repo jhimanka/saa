@@ -6,8 +6,8 @@
    [clojure.tools.cli :refer [parse-opts]]
    [aero.core :refer (read-config)]
    [clj-http.client :as client]
-   [java-time :as jt])
-  (:use [clojure.data.xml])
+   [java-time :as jt]
+   [clojure.data.xml :refer [parse-str]])
   (:import [java.io  BufferedReader StringReader])
   (:gen-class))
 
@@ -76,7 +76,7 @@
         filename (str "/tmp/weatherdata-" (:location cliopts) ".xml")
         datauri (str "https://opendata.fmi.fi/wfs?service=WFS&version=2.0.0&request=getFeature&storedquery_id=fmi::forecast::harmonie::surface::point::multipointcoverage&place="
                      (:location cliopts))
-        initfile (when (or ; fetch the XML if a cached copy doesn't exist or is over 15 mins old
+        _ (when (or ; fetch the XML if a cached copy doesn't exist or is over 15 mins old
                         (not (.exists (io/file filename)))
                         (olderthan (io/file filename) 900000))
                    (spit filename

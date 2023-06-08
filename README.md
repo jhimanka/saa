@@ -11,11 +11,11 @@ To build the classes, do this:
 
 mkdir classes
 
-clj -e "(compile 'saa)"
+clojure -e "(compile 'saa)"
 
 ## Usage
 
-./runsaa -l pispala,tampere -m Precipitation1h
+./runsaa -l pispala,tampere -m PrecipitationAmount
 
 ## Options
 

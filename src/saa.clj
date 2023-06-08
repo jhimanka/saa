@@ -4,8 +4,9 @@
    [clojure.java.io :as io]
    [clojure.tools.cli :refer [parse-opts]]
    [aero.core :refer (read-config)]
-   [clj-http.client :as client])
-  (:use [clojure.data.xml])
+   [clj-http.client :as client]
+   [clojure.string :as string]
+   [clojure.data.xml :refer [parse-str]])
   (:gen-class))
 
 (defn config []
@@ -78,7 +79,7 @@
         filename (str "/tmp/weatherdata-" (:location cliopts) ".xml")
         datauri (str "http://opendata.fmi.fi/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::timevaluepair&place="
                      (:location cliopts))
-        initfile (when (or ; fetch the XML if a cached copy doesn't exist or is over 15 mins old
+        _ (when (or ; fetch the XML if a cached copy doesn't exist or is over 15 mins old
                         (not (.exists (io/file filename)))
                         (olderthan (io/file filename) 900000))
                    (spit filename
@@ -95,7 +96,7 @@
     (cleanup)
     (cond
       (:help cliopts)
-      (println (str "-l, --location PLACE [" (:defaultlocation (config)) "]\n-m --measurement [" (:defaultmeasurement (config)) "]\n\nPossible values for measurement are:\n" (clojure.string/join " " (sort measurements))))
+      (println (str "-l, --location PLACE [" (:defaultlocation (config)) "]\n-m --measurement [" (:defaultmeasurement (config)) "]\n\nPossible values for measurement are:\n" (string/join " " (sort measurements))))
       (:errors climap)
       (println (:errors climap))
       :else

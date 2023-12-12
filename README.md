@@ -7,11 +7,9 @@ Finnish Meterological Institute forecasts
 An api key used to be a requirement, but now access is open to everybody. More info at
 https://en.ilmatieteenlaitos.fi/open-data-manual-accessing-data
 
-To build the classes, do this:
+To build the project, do :
 
-mkdir classes
-
-clojure -e "(compile 'saa)"
+clojure -T:build uber
 
 ## Usage
 

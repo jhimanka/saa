@@ -1,4 +1,4 @@
-(ns saa
+(ns jhimanka.saa
   (:require
    [fipp.edn :refer (pprint) :rename {pprint fipp}]
    [clojure.string :refer [split join trim]]

@@ -6,16 +6,17 @@
    [clojure.tools.cli :refer [parse-opts]]
    [aero.core :refer (read-config)]
    [clj-http.client :as client]
-   [java-time :as jt]
    [clojure.data.xml :refer [parse-str]])
-  (:import [java.io  BufferedReader StringReader])
+  (:import [java.io  BufferedReader StringReader]
+           [java.time Instant ZoneId ZonedDateTime]
+           [java.time.format DateTimeFormatter])
   (:gen-class))
 
 (defn config []
   (read-config "config.edn"))
 
-(defn apikey [conf]
-  (get-in conf [:secrets :apikey]))
+(def timezone (ZoneId/of "EET"))
+(def formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm:ss"))
 
 (def measurements #{"GeopHeight" "Temperature" "Pressure" "Humidity" "WindDirection" "WindSpeedMS" "WindUMS" "WindVMS"  "WindGust" "DewPoint" "TotalCloudCover" "LowCloudCover" "MediumCloudCover" "HighCloudCover" "PrecipitationAmount" "RadiationGlobalAccumulation" "RadiationNetSurfaceLWAccumulation" "RadiationNetSurfaceSWAccumulation" "RadiationGlobal" "Visibility"})
 
@@ -51,7 +52,7 @@
 (defn olderthan
   "Is this file older than given time?"
   [suspect age]
-  (> (- (.getTime (java.util.Date.))
+  (> (- (System/currentTimeMillis)
         (.lastModified suspect))
      age))
 
@@ -112,9 +113,9 @@
                                   (split #"\s+")
                                   (last)
                                   (parse-long)
-                                  (* 1000)
-                                  (jt/java-date)
-                                  (str))) coll))]
+                                  (Instant/ofEpochSecond)
+                                  (ZonedDateTime/ofInstant timezone)
+                                  (.format formatter))) coll))]
     (cleanup)
     (cond
       (:help cliopts)
@@ -132,4 +133,4 @@
   (require '[portal.api :as portal])
   (portal/open)
   (portal/tap)
-  (def ennuste (parse-str (slurp "/tmp/weatherdata-juhannuskylä,tampere.xml"))))
+)

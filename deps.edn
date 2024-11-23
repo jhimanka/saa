@@ -4,9 +4,7 @@
  fipp/fipp {:mvn/version "0.6.27"}
  aero/aero {:mvn/version "1.1.6"}
  org.clojure/tools.cli {:mvn/version "1.1.230"}
- clj-http/clj-http {:mvn/version "3.13.0"}
-  clojure.java-time/clojure.java-time {:mvn/version "1.4.3"}
-  }
+ clj-http/clj-http {:mvn/version "3.13.0"}}
  :paths ["src" "classes"]
  :aliases
  {:run-m {:main-opts ["-m" "jhimanka.saa"]}
